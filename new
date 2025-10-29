@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jenny's Taxi — Rayleigh & Essex | 24/7 Hackney Carriage</title>
+  <meta name="description" content="Jenny's Taxi — 24/7 Hackney carriage in Rochford district. Pre-books, airport runs, and local trips across Essex. Phone 07487 328368."/>
+  <style>
+    :root{
+      --magenta:#ff00aa;
+      --silver:#cfcfcf;
+      --black:#0b0b0b;
+      font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--black);color:#fff}
+    .container{max-width:980px;margin:28px auto;padding:20px}
+    header{text-align:center}
+    header img{width:100%;max-width:600px;border-radius:20px;box-shadow:0 6px 20px rgba(255,0,170,0.2)}
+    h1{font-size:28px;color:var(--magenta);margin:10px 0 0}
+    p.lead{margin:6px 0 0;color:var(--silver)}
+    .card{background:rgba(255,255,255,0.05);padding:18px;border-radius:16px;margin-top:20px}
+    .btn{display:inline-block;background:var(--magenta);color:#fff;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:700;border:none;cursor:pointer}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#fff;margin-bottom:10px}
+    input::placeholder,textarea::placeholder{color:#aaa}
+    footer{text-align:center;color:var(--silver);font-size:13px;margin-top:30px}
+    #loading {display:none;color:var(--magenta);font-weight:bold;margin-top:10px;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="jennys-taxi-logo.jpeg" alt="Jenny's Taxi Logo">
+      <h1>Jenny's Taxi</h1>
+      <p class="lead">24/7 Hackney carriage — Rochford district · Rayleigh & Essex</p>
+    </header>
+
+    <section class="card">
+      <h2 style="color:var(--magenta)">About Jenny</h2>
+      <p>I’m a female Hackney carriage taxi driver based in the Rochford district with 3+ years' experience. I provide a professional, friendly and safe service 24 hours a day, 7 days a week. I work predominantly in Rayleigh and neighbouring areas across Essex, and I’m available for pre-bookings and trips to London, Hertford and further afield — I’ve even driven passengers to Cornwall.</p>
+      <p>📞 <strong>07487 328368</strong></p>
+    </section>
+
+    <section class="card">
+      <h2 style="color:var(--magenta)">Bookings & Pricing Tool</h2>
+      <p>Get an instant quote based on your journey distance. Airport rates remain fixed as shown.</p>
+
+      <form id="bookingForm" onsubmit="event.preventDefault();calculateFare();">
+        <input id="pickup" type="text" placeholder="Enter pickup address" required>
+        <input id="dropoff" type="text" placeholder="Enter drop-off address" required>
+        <select id="service">
+          <option value="standard">Standard Fare</option>
+          <option value="stansted">Stansted (£90)</option>
+          <option value="londoncity">London City (£90)</option>
+          <option value="gatwick">Gatwick (£120)</option>
+          <option value="luton">Luton (£120)</option>
+          <option value="heathrow">Heathrow (£140)</option>
+        </select>
+        <button class="btn" type="submit">Calculate Fare</button>
+      </form>
+
+      <div id="loading">Calculating fare… please wait</div>
+      <div id="result" style="margin-top:10px;display:none">
+        <p>Estimated fare: <strong id="price"></strong></p>
+        <p style="font-size:13px;color:var(--silver)">* Based on live distance from Google Maps.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 style="color:var(--magenta)">Contact / Booking Enquiry</h2>
+      <form action="https://formspree.io/f/movpdole" method="POST">
+        <input type="text" name="name" placeholder="Your Name" required>
+        <input type="email" name="email" placeholder="Your Email" required>
+        <input type="text" name="phone" placeholder="Your Phone" required>
+        <textarea name="message" rows="5" placeholder="Your message or booking details..." required></textarea>
+        <button class="btn" type="submit">Send Message</button>
+      </form>
+      <p style="font-size:13px;color:var(--silver)">Messages are sent securely to miss.jenny.medcalf@gmail.com via Formspree.</p>
+    </section>
+
+    <footer>
+      <div>Jenny's Taxi — Rochford district · Rayleigh & Essex</div>
+      <div>© 2025 Jenny Medcalf</div>
+    </footer>
+  </div>
+
+  <script>
+    const RATE = 2.7; // Hidden from user
+    const AIRPORT = {
+      stansted: 90,
+      londoncity: 90,
+      gatwick: 120,
+      luton: 120,
+      heathrow: 140
+    };
+
+    async function calculateFare() {
+      const pickup = document.getElementById('pickup').value;
+      const dropoff = document.getElementById('dropoff').value;
+      const service = document.getElementById('service').value;
+      const loading = document.getElementById('loading');
+      const result = document.getElementById('result');
+      const priceEl = document.getElementById('price');
+
+      result.style.display = 'none';
+      loading.style.display = 'block';
+      priceEl.textContent = '';
+
+      try {
+        if (AIRPORT[service]) {
+          loading.style.display = 'none';
+          priceEl.textContent = '£' + AIRPORT[service].toFixed(2);
+          result.style.display = 'block';
+          return;
+        }
+
+        const response = await fetch('/.netlify/functions/getDistance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pickup, dropoff })
+        });
+
+        const data = await response.json();
+
+        loading.style.display = 'none';
+
+        if (data && data.distanceMiles) {
+          const total = data.distanceMiles * RATE;
+          priceEl.textContent = '£' + total.toFixed(2);
+        } else {
+          priceEl.textContent = 'Unable to calculate distance. Please check addresses.';
+        }
+        result.style.display = 'block';
+      } catch (err) {
+        loading.style.display = 'none';
+        priceEl.textContent = 'Error calculating fare. Please try again.';
+        result.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
